@@ -117,3 +117,10 @@ class GCN(BaseNet):
 
     def predict(self):
         return tf.nn.softmax(self.outputs)
+
+class Sage(BaseNet):
+    def __init__(self, placeholders, input_dim, **kwargs):
+        return None
+
+    def predict(self):
+        return tf.nn.softmax(self.outputs)

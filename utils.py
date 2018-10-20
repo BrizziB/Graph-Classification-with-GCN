@@ -2,7 +2,8 @@ import numpy as np
 import time
 import scipy.sparse as sp
 import tensorflow as tf
-from scipy.sparse.linalg.eigen.arpack import eigsh
+
+
 
 #trasforma matrici in tuple
 def to_tuple(mat):
@@ -13,7 +14,6 @@ def to_tuple(mat):
     shape = mat.shape
     return idxs, values, shape
 
-
 #trasforma matrici sparse in tuble
 def sparse_to_tuple(sparse_mat):
     if isinstance(sparse_mat, list):
@@ -21,34 +21,14 @@ def sparse_to_tuple(sparse_mat):
             sparse_mat[i] = to_tuple(sparse_mat[i])
     else:
         sparse_mat = to_tuple(sparse_mat)
-
     return sparse_mat
 
 #normalizza la matrice delle feature per riga e la trasforma in tupla
-def preprocess_features(features):
-    rowadd = np.array(features.sum(1))
-    inv = np.power(rowadd, -1).flatten()
-    inv[np.isinf(inv)] = 0. # casi di elem infiniti
-    mat_inv = sp.diags(inv)
-    features = mat_inv.dot(features)
-    return sparse_to_tuple(features)
+def process_features(features):
+    features /= features.sum(1).reshape(-1, 1)
+    return sparse_to_tuple(sp.csr_matrix(features))
 
-
-    
-def xpreprocess_adj(adj):
-    adj = adj + sp.eye(adj.shape[0]) # A' = A + I
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1)) # D - matrice degree
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten() # D^-1/2
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0. # casi di elem infiniti
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    adj_normalized = adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo() # D^-1/2 A' D^-1/2
-    return sparse_to_tuple(adj_normalized)
-
-# =============================================================================================================
-# =============================================================================================================
-# =============================================================================================================
-
+#renormalization trick della matrice di adiacenza
 def normalize_adj(adj, symmetric=True):
     if symmetric:
         d = sp.diags(np.power(np.array(adj.sum(1)), -0.5).flatten(), 0)
@@ -59,19 +39,15 @@ def normalize_adj(adj, symmetric=True):
     return sp.csr_matrix(a_norm)
 
 
-
-#renormalization trick della matrice di adiacenza e conversione a tupla
-def preprocess_adj(adj, symmetric = True):
-    adj = adj + sp.eye(adj.shape[0])
+#conversione a tupla e normalizzazione della matrice d'adiacenza
+def preprocess_adj(adj, is_gcn, symmetric = True):
+    if is_gcn:
+        adj = adj + sp.eye(adj.shape[0]) # ogni nodo ha come vicino anche se stesso, fa parte di GCN
     adj = normalize_adj(adj, symmetric)
     return sparse_to_tuple(adj)
 
-# =============================================================================================================
-# =============================================================================================================
-# =============================================================================================================
 
-#metriche
-
+#  --------------------- metriche --------------------------------------------
 #cross-entropy con mascheramento per isolare i nodi con label
 def masked_cross_entropy(predictions, labels, mask):
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=predictions, labels=labels)
@@ -90,7 +66,9 @@ def masked_accuracy(predictions, labels, mask):
     return tf.reduce_mean(accuracy_all)
 
 
-#inizializzatore di pesi secondo Glorot&Bengio
+
+#  ----------------------- init -----------------------------------------------
+#inizializzatore di pesi secondo Glorot&Bengio  - vedi come funziona 
 def glorot(shape, name=None):
     init_range = np.sqrt(6.0/(shape[0]+shape[1]))
     val = tf.random_uniform(shape, minval=-init_range, maxval=init_range, dtype=tf.float32)
@@ -100,8 +78,8 @@ def zeros(shape, name=None):
     initial = tf.zeros(shape, dtype=tf.float32)
     return tf.Variable(initial, name=name)
 
-#costruzione dei dizionari per l'addestramento 
-def build_dictionary(feats, support, labels, labels_mask, placeholders):
+#costruzione del dizionario per GCN 
+def build_dictionary_GCN(feats, support, labels, labels_mask, placeholders):
     #prepara il dizionario che sarà poi passato alla sessione di TF
     dictionary = dict()
     dictionary.update({placeholders['labels']: labels})
@@ -109,4 +87,16 @@ def build_dictionary(feats, support, labels, labels_mask, placeholders):
     dictionary.update({placeholders['feats']: feats})
     dictionary.update({placeholders['support'][i]: support[i] for i in range(len(support))})
     dictionary.update({placeholders['num_features_nonzero']: feats[1].shape})
+    return dictionary
+
+#costruzione del dizionario per Sage 
+def build_dictionary_Sage(feats, support, labels, labels_mask, degree, placeholders):
+    #prepara il dizionario che sarà poi passato alla sessione di TF
+    dictionary = dict()
+    dictionary.update({placeholders['labels']: labels})
+    dictionary.update({placeholders['labels_mask']: labels_mask})
+    dictionary.update({placeholders['feats']: feats})
+    dictionary.update({placeholders['support'][i]: support[i] for i in range(len(support))})
+    dictionary.update({placeholders['num_features_nonzero']: feats[1].shape})
+    dictionary.update({placeholders['degree']: degree})
     return dictionary
