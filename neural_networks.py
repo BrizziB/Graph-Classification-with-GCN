@@ -110,17 +110,66 @@ class GCN(BaseNet):
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
-                                            activation=lambda x: x,
+                                            activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=False))
-
+             
 
     def predict(self):
         return tf.nn.softmax(self.outputs)
 
-class Sage(BaseNet):
+
+class GCNGraphs(BaseNet):
     def __init__(self, placeholders, input_dim, **kwargs):
-        return None
+        super(GCNGraphs, self).__init__(**kwargs)
+
+        self.inputs = placeholders['feats']
+        self.input_dim = input_dim
+        self.output_dim = placeholders['labels'].get_shape().as_list()[1]
+        self.placeholders = placeholders
+
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
+
+        self.build()
+
+    def _loss(self):
+        # Weight decay loss
+        for var in self.layers[0].weights.values():
+            self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
+
+        #cross entropy loss
+        self.loss += masked_cross_entropy(self.outputs, self.placeholders['labels'],
+                                                  self.placeholders['labels_mask'])
+
+    def _accuracy(self):
+        self.accuracy = masked_accuracy(self.outputs, self.placeholders['labels'],
+                                        self.placeholders['labels_mask'])
+
+    def _build(self): 
+
+        self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
+                                            output_dim=FLAGS.hidden1,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=True))
+
+        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
+                                            output_dim=FLAGS.hidden2,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=False))
+        
+        self.layers.append(MaxLayer())   
+
+        self.layers.append(DenseLayer(input_dim=FLAGS.hidden2,
+                                 output_dim=self.output_dim,
+                                 placeholders=self.placeholders,
+                                 dropout=True,
+                                 sparse_inputs = False,
+                                 act=lambda x: x))      
+        
 
     def predict(self):
         return tf.nn.softmax(self.outputs)
