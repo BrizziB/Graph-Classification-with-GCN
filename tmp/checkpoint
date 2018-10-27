@@ -1,2 +1,2 @@
-model_checkpoint_path: "gcn.ckpt"
-all_model_checkpoint_paths: "gcn.ckpt"
+model_checkpoint_path: "gcngraphs.ckpt"
+all_model_checkpoint_paths: "gcngraphs.ckpt"

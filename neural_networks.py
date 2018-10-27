@@ -148,28 +148,23 @@ class GCNGraphs(BaseNet):
     def _build(self): 
 
         self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
-                                            output_dim=FLAGS.hidden1,
+                                            output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=True))
 
-        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
-                                            output_dim=FLAGS.hidden2,
+        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
+                                            output_dim=self.output_dim,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=False))
-        
-        self.layers.append(MaxLayer())   
 
-        self.layers.append(DenseLayer(input_dim=FLAGS.hidden2,
-                                 output_dim=self.output_dim,
-                                 placeholders=self.placeholders,
-                                 dropout=True,
-                                 sparse_inputs = False,
-                                 act=lambda x: x))      
         
+
+
+
 
     def predict(self):
         return tf.nn.softmax(self.outputs)

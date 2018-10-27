@@ -105,7 +105,7 @@ class MaxLayer(Layer):
 
     def _call(self, inputs):
         x = inputs
-        return tf.reduce_max(x, axis=0, keepdims=True)
+        return tf.reduce_max(x, axis=0, keepdims=False)
 
 
 
@@ -156,8 +156,8 @@ class DenseLayer(Layer):
 class MeanPoolingLayer(Layer):
     """ Aggregates via mean-pooling over MLP functions.
     """
-    def __init__(self, input_dim, output_dim, neigh_input_dim=None, placeholders=None,
-            dropout=False, bias=False, activation=tf.nn.relu, name=None, concat=False, **kwargs):
+    def __init__(self, input_dim, output_dim, placeholders=None,
+            dropout=False, bias=False, activation=tf.nn.relu, name=None, **kwargs):
         super(MeanPoolingLayer, self).__init__(**kwargs)
 
         if dropout:
