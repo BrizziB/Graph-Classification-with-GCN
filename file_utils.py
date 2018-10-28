@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 from itertools import groupby
 import scipy.sparse as sp
+import random
 import sys
 
 def parse_index_file(filename):
@@ -81,6 +82,31 @@ def get_splits(labels, train_dim, val_dim, test_dim):
 
     return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
 
+def get_splits_graphs(labels, train_dim, val_dim, test_dim, idx):
+
+    idx_incr = np.array([i for i in range(600)])
+    idx_incr = idx + idx_incr
+    random.shuffle(idx_incr) #fondamentale
+
+    train_ind = [idx_incr[train_dim[0] : train_dim[1]]]
+    val_ind = [idx_incr[val_dim[0] : val_dim[1]]]
+    test_ind = [idx_incr[test_dim[0] : test_dim[1]]]
+
+    labels_train = np.zeros(labels.shape, dtype=np.int32)
+    labels_val = np.zeros(labels.shape, dtype=np.int32)
+    labels_test = np.zeros(labels.shape, dtype=np.int32)
+
+    labels_train[train_ind] = labels[train_ind]
+    labels_val[val_ind] = labels[val_ind]
+    labels_test[test_ind] = labels[test_ind]
+
+    train_mask = sample_mask(train_ind, labels.shape[0])
+    val_mask = sample_mask(val_ind, labels.shape[0])
+    test_mask = sample_mask(test_ind, labels.shape[0])
+
+    return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
+
+
 
 def load_data_ENZYMES():
     num_nodes = 19580
@@ -91,7 +117,7 @@ def load_data_ENZYMES():
     node_feats = build_feats_vertConc(fake_idx, path="enzymes/ENZYMES_node_attributes.txt", )
     graph_labels = build_labels_vertConc(num_graphs, fake_idx, path="enzymes/ENZYMES_graph_labels.txt", padding=num_nodes) #codifica one-hot
     
-    return sparse_adj, node_feats, graph_labels
+    return sparse_adj, node_feats, graph_labels, fake_idx
 
 
 def find_insert_position(path):
@@ -109,6 +135,8 @@ def build_labels_vertConc(graphs, idx, path, padding):
 
     true_labels = np.loadtxt("enzymes/ENZYMES_graph_labels.txt", dtype='i', delimiter=',') #prova
     true_labels = encode_onehot(true_labels)
+
+    
     labels = np.array([[0 for i in range(6)] for k in range(19580)])
 
     #inserisco le label "vere" su cui calcolare loss e verificare i risultati
@@ -121,12 +149,12 @@ def build_labels_vertConc(graphs, idx, path, padding):
     return labels
 
 def build_feats_vertConc(idx, path):
-    if(os.path.exists("feats_matrix_aug.npy")):
-        feats_matrix = np.load("feats_matrix_aug.npy")
+    if(os.path.exists("feats_matrix_aug.npz")):
+        feats_matrix = sp.load_npz("feats_matrix_aug.npz")
         return feats_matrix
 
     feats_matrix = np.loadtxt("enzymes/ENZYMES_node_attributes.txt", delimiter=',')
-    fake_feats = np.array([[0.0001 for i in range(18)] for k in range(600)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
+    fake_feats = np.array([[0.0000001 for i in range(18)] for k in range(600)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
     #inserimento righe aggiuntive
     print("inserting global node rows:")
     for i in range(600):
@@ -142,8 +170,8 @@ def build_feats_vertConc(idx, path):
 #dal file ENZYMES_A costruisce una matrice diagonale a blocchi contenente le matrici di adiacenza di ogni grafo (un grafo per blocco)
 def build_adj_diag(nodes, idx, path):
     
-    if(os.path.exists("adj_matrix_aug.npy")):
-        adj_matrix = np.load("adj_matrix_aug.npy")
+    if(os.path.exists("adj_matrix_aug.npz")):
+        adj_matrix = sp.load_npz("adj_matrix_aug.npz")
         return adj_matrix
     
     #vanno preparati 600 nodi globali, uno per grafo

@@ -18,16 +18,16 @@ tf.set_random_seed(seed)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('epochs', 50, 'Number of epochs to train.')
-flags.DEFINE_integer('hidden1', 16, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('epochs', 80, 'Number of epochs to train.')
+flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
 
 
-adj, features, labels = load_data_ENZYMES() #poi passalo al normalizzatore
-y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits(labels, [0,300], [300, 400], [400, 600])
+adj, features, labels, idx = load_data_ENZYMES() #poi passalo al normalizzatore
+y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(labels, [0,400], [400, 500], [500, 600], idx)
 
 support = [preprocess_adj(adj, True, True)]
 features = process_features(features)
