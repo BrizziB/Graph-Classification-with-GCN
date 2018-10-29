@@ -22,10 +22,10 @@ flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 40, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
 flags.DEFINE_boolean('featureless', True, 'If nodes are featureless')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('dropout', 0.2, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
-flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
+flags.DEFINE_integer('early_stopping', 15, 'Tolerance for early stopping (# of epochs).')
 
 
 if FLAGS.dataset=='ENZYMES':
@@ -34,7 +34,7 @@ if FLAGS.dataset=='ENZYMES':
     num_classes = 6
     num_feats = 18
     dataset_name = "enzymes"
-    splits = [[0,400], [400, 500], [500, 600]]
+    splits = [[0,500], [500, 550], [550, 600]]
 elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram
     num_nodes = 73283
     num_graphs = 4337
@@ -106,6 +106,10 @@ for epoch in range(FLAGS.epochs):
     print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_out[1]),
           "train_acc=", "{:.5f}".format(train_out[2]), "val_loss=", "{:.5f}".format(cost),
           "val_acc=", "{:.5f}".format(acc), "time=", "{:.5f}".format(time.time() - t))
+
+    if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
+        print("Early stopping...")
+        break
 
 network.save(sess)
 

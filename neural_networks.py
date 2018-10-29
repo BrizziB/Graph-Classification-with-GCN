@@ -148,7 +148,7 @@ class GCNGraphs(BaseNet):
     def _build(self): 
         if self.featureless:
             self.layers.append(ConvolutionalLayer(input_dim=20180,
-                                            output_dim=FLAGS.hidden1,
+                                            output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
@@ -156,12 +156,21 @@ class GCNGraphs(BaseNet):
                                             featureless = True))
         else:
             self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
-                                            output_dim=FLAGS.hidden1,
+                                            output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=True,
                                             featureless = False))
+
+        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
+                                            output_dim=FLAGS.hidden1,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=False,
+                                            featureless = False))
+
 
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
                                             output_dim=self.output_dim,

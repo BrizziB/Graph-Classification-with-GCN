@@ -108,13 +108,13 @@ def get_splits_graphs(num_graphs, labels, train_dim, val_dim, test_dim, idx):
 
 
 
-def load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name):
+def load_data(num_nodes, num_graphs, num_classes, dim_feats, dataset_name):
 
     global_nodes_idx = find_insert_position(dataset_name)
 
     adj_matrix = build_adj_diag(num_nodes, num_graphs, global_nodes_idx, dataset_name)
 
-    node_feats = build_feats_vertConc(global_nodes_idx, num_graphs, num_feats, dataset_name)
+    node_feats = build_feats_vertConc_mean_features(global_nodes_idx, num_nodes, num_graphs, dim_feats, dataset_name)
 
     graph_labels = build_labels_vertConc(num_graphs, num_classes, num_nodes, global_nodes_idx, dataset_name) #codifica one-hot
     
@@ -150,7 +150,7 @@ def build_labels_vertConc(graphs, num_classes, num_nodes, idx, dataset_name ):
     np.save(dataset_name +"_labels_aug.npy", labels)
     return labels
 
-def build_feats_vertConc(idx, graphs, num_feats, dataset_name):
+def build_feats_vertConc(idx, num_nodes, graphs, dim_feats, dataset_name):
     if(os.path.exists(dataset_name+"_feats_matrix_aug.npz")):
         feats_matrix = sp.load_npz(dataset_name+"_feats_matrix_aug.npz")
         return feats_matrix
@@ -158,7 +158,7 @@ def build_feats_vertConc(idx, graphs, num_feats, dataset_name):
     path=dataset_name +"/"+dataset_name.upper()+"_node_attributes.txt" 
 
     feats_matrix = np.loadtxt(path, delimiter=',')
-    fake_feats = np.array([[0. for i in range(num_feats)] for k in range(graphs)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
+    fake_feats = np.array([[0. for i in range(dim_feats)] for k in range(graphs)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
     #inserimento righe aggiuntive
     print("inserting global node rows:")
     for i in range(graphs):
@@ -168,6 +168,29 @@ def build_feats_vertConc(idx, graphs, num_feats, dataset_name):
 
     feats_matrix = sp.csr_matrix(feats_matrix)
     sp.save_npz(dataset_name+"_feats_matrix_aug", feats_matrix)
+    return feats_matrix
+
+
+def build_feats_vertConc_mean_features(idx,num_nodes, graphs, dim_feats, dataset_name):
+    if(os.path.exists(dataset_name+"_feats_matrix_aug_with_mean.npz")):
+        feats_matrix = sp.load_npz(dataset_name+"_feats_matrix_aug_with_mean.npz")
+        return feats_matrix
+
+    path=dataset_name +"/"+dataset_name.upper()+"_node_attributes.txt" 
+    aug_idx = np.append(idx, int(num_nodes-1))
+
+    feats_matrix = np.loadtxt(path, delimiter=',')
+    #inizializzo le features di ogni nodo globale come la media delle features dei nodi del relativo grafo
+    fake_feats = np.array([[ np.mean(feats_matrix[[ range(aug_idx[k],aug_idx[k+1]) ] ,[i] ] ) for i in range(dim_feats)] for k in range(graphs)])
+    #inserimento righe aggiuntive
+    print("inserting global node rows:")
+    for i in range(graphs):
+        feats_matrix = np.insert(feats_matrix, idx[i]+i, fake_feats[i], axis=0)
+        print("row: ")
+        print(i)
+
+    feats_matrix = sp.csr_matrix(feats_matrix)
+    sp.save_npz(dataset_name+"_feats_matrix_aug_with_mean", feats_matrix)
     return feats_matrix
 
 
