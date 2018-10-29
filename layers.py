@@ -86,7 +86,7 @@ class ConvolutionalLayer(Layer):
             if not self.featureless: 
                 pre_sup = dot(x, self.weights['weights_' + str(i)],
                               sparse=self.sparse_inputs)
-            else: #leva il caso featureless, poi semmai la rimetti ma per ora non è usata mai
+            else:
                 pre_sup = self.weights['weights_' + str(i)]
             support = dot(self.support[i], pre_sup, sparse=True)
             supports.append(support)

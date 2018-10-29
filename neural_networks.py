@@ -120,14 +120,14 @@ class GCN(BaseNet):
 
 
 class GCNGraphs(BaseNet):
-    def __init__(self, placeholders, input_dim, **kwargs):
+    def __init__(self, placeholders, input_dim, featureless, **kwargs):
         super(GCNGraphs, self).__init__(**kwargs)
 
         self.inputs = placeholders['feats']
         self.input_dim = input_dim
         self.output_dim = placeholders['labels'].get_shape().as_list()[1]
         self.placeholders = placeholders
-
+        self.featureless = featureless
         self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
 
         self.build()
@@ -146,20 +146,30 @@ class GCNGraphs(BaseNet):
                                         self.placeholders['labels_mask'])
 
     def _build(self): 
-
-        self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
+        if self.featureless:
+            self.layers.append(ConvolutionalLayer(input_dim=20180,
                                             output_dim=FLAGS.hidden1,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
-                                            sparse_inputs=True))
+                                            sparse_inputs=True,
+                                            featureless = True))
+        else:
+            self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
+                                            output_dim=FLAGS.hidden1,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=True,
+                                            featureless = False))
 
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
                                             activation=lambda x: x,
                                             dropout=True,
-                                            sparse_inputs=False))
+                                            sparse_inputs=False,
+                                            featureless = False))
 
         
 

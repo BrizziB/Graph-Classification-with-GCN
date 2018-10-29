@@ -65,8 +65,6 @@ def masked_accuracy(predictions, labels, mask):
     accuracy_all *= mask
     return tf.reduce_mean(accuracy_all)
 
-
-
 #  ----------------------- init -----------------------------------------------
 #inizializzatore di pesi secondo Glorot&Bengio  - vedi come funziona 
 def glorot(shape, name=None):
@@ -89,14 +87,3 @@ def build_dictionary_GCN(feats, support, labels, labels_mask, placeholders):
     dictionary.update({placeholders['num_features_nonzero']: feats[1].shape})
     return dictionary
 
-#costruzione del dizionario per Sage 
-def build_dictionary_Sage(feats, support, labels, labels_mask, degree, placeholders):
-    #prepara il dizionario che sarà poi passato alla sessione di TF
-    dictionary = dict()
-    dictionary.update({placeholders['labels']: labels})
-    dictionary.update({placeholders['labels_mask']: labels_mask})
-    dictionary.update({placeholders['feats']: feats})
-    dictionary.update({placeholders['support'][i]: support[i] for i in range(len(support))})
-    dictionary.update({placeholders['num_features_nonzero']: feats[1].shape})
-    dictionary.update({placeholders['degree']: degree})
-    return dictionary

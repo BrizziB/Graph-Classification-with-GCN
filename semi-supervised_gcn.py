@@ -33,7 +33,7 @@ flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of e
 
 
 # Load data
-features, adj, labels = load_data("cora","gcn")
+features, adj, labels = load_data_outer("cora","gcn")
 y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits(labels, [0,140], [200, 500], [700, 1700])
 
 support = [preprocess_adj(adj, FLAGS.type=='gcn', True)]

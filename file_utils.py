@@ -25,7 +25,7 @@ def sample_mask(idx, l):
     mask[idx] = 1
     return np.array(mask, dtype=np.bool)
 
-def load_data(dataset, model):
+def load_data_outer(dataset, model):
     if model == 'gcn':
         return load_data_gcn(dataset)
 
@@ -82,9 +82,9 @@ def get_splits(labels, train_dim, val_dim, test_dim):
 
     return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
 
-def get_splits_graphs(labels, train_dim, val_dim, test_dim, idx):
+def get_splits_graphs(num_graphs, labels, train_dim, val_dim, test_dim, idx):
 
-    idx_incr = np.array([i for i in range(600)])
+    idx_incr = np.array([i for i in range(num_graphs)])
     idx_incr = idx + idx_incr
     random.shuffle(idx_incr) #fondamentale
 
@@ -108,79 +108,84 @@ def get_splits_graphs(labels, train_dim, val_dim, test_dim, idx):
 
 
 
-def load_data_ENZYMES():
-    num_nodes = 19580
-    num_graphs = 600
-    fake_idx = find_insert_position(path="enzymes/ENZYMES_graph_indicator.txt")
+def load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name):
 
-    sparse_adj = build_adj_diag(num_nodes, fake_idx, path="enzymes/ENZYMES_A.txt")
-    node_feats = build_feats_vertConc(fake_idx, path="enzymes/ENZYMES_node_attributes.txt", )
-    graph_labels = build_labels_vertConc(num_graphs, fake_idx, path="enzymes/ENZYMES_graph_labels.txt", padding=num_nodes) #codifica one-hot
+    global_nodes_idx = find_insert_position(dataset_name)
+
+    adj_matrix = build_adj_diag(num_nodes, num_graphs, global_nodes_idx, dataset_name)
+
+    node_feats = build_feats_vertConc(global_nodes_idx, num_graphs, num_feats, dataset_name)
+
+    graph_labels = build_labels_vertConc(num_graphs, num_classes, num_nodes, global_nodes_idx, dataset_name) #codifica one-hot
     
-    return sparse_adj, node_feats, graph_labels, fake_idx
+    return adj_matrix, node_feats, graph_labels, global_nodes_idx
 
 
-def find_insert_position(path):
-    node_ind = np.genfromtxt("enzymes/ENZYMES_graph_indicator.txt")
+def find_insert_position(dataset_name):
+    path = dataset_name +"/"+dataset_name.upper()+"_graph_indicator.txt"
+    node_ind = np.genfromtxt(path)
     fake_idx = np.where(node_ind[:-1] != node_ind[1:])[0]
     fake_idx = fake_idx + 1
     fake_idx = np.insert(fake_idx, 0, 0)
     return fake_idx
 
-def build_labels_vertConc(graphs, idx, path, padding):
+def build_labels_vertConc(graphs, num_classes, num_nodes, idx, dataset_name ):
     
-    if(os.path.exists("labels_aug.npy")):
-        labels = np.load("labels_aug.npy")
+    if(os.path.exists(dataset_name +"_labels_aug.npy")):
+        labels = np.load(dataset_name +"_labels_aug.npy")
         return labels
 
-    true_labels = np.loadtxt("enzymes/ENZYMES_graph_labels.txt", dtype='i', delimiter=',') #prova
+    path=dataset_name +"/"+dataset_name.upper()+"_graph_labels.txt"
+
+    true_labels = np.loadtxt(path, dtype='i', delimiter=',') #prova
     true_labels = encode_onehot(true_labels)
+    labels = np.array([[0 for i in range(num_classes)] for k in range(num_nodes)])
 
-    
-    labels = np.array([[0 for i in range(6)] for k in range(19580)])
-
-    #inserisco le label "vere" su cui calcolare loss e verificare i risultati
-    for i in range(600):
+    #inserisco le label vere su cui calcolare loss e verificare i risultati
+    for i in range(graphs):
         labels = np.insert(labels, idx[i]+i, true_labels[i], axis=0)
         print("row: ")
         print(i)
 
-    np.save("labels_aug.npy", labels)
+    np.save(dataset_name +"_labels_aug.npy", labels)
     return labels
 
-def build_feats_vertConc(idx, path):
-    if(os.path.exists("feats_matrix_aug.npz")):
-        feats_matrix = sp.load_npz("feats_matrix_aug.npz")
+def build_feats_vertConc(idx, graphs, num_feats, dataset_name):
+    if(os.path.exists(dataset_name+"_feats_matrix_aug.npz")):
+        feats_matrix = sp.load_npz(dataset_name+"_feats_matrix_aug.npz")
         return feats_matrix
 
-    feats_matrix = np.loadtxt("enzymes/ENZYMES_node_attributes.txt", delimiter=',')
-    fake_feats = np.array([[0.0000001 for i in range(18)] for k in range(600)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
+    path=dataset_name +"/"+dataset_name.upper()+"_node_attributes.txt" 
+
+    feats_matrix = np.loadtxt(path, delimiter=',')
+    fake_feats = np.array([[0. for i in range(num_feats)] for k in range(graphs)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
     #inserimento righe aggiuntive
     print("inserting global node rows:")
-    for i in range(600):
+    for i in range(graphs):
         feats_matrix = np.insert(feats_matrix, idx[i]+i, fake_feats[i], axis=0)
         print("row: ")
         print(i)
 
     feats_matrix = sp.csr_matrix(feats_matrix)
-    sp.save_npz("feats_matrix_aug", feats_matrix)
+    sp.save_npz(dataset_name+"_feats_matrix_aug", feats_matrix)
     return feats_matrix
 
 
 #dal file ENZYMES_A costruisce una matrice diagonale a blocchi contenente le matrici di adiacenza di ogni grafo (un grafo per blocco)
-def build_adj_diag(nodes, idx, path):
+def build_adj_diag(nodes, graphs, idx, dataset_name):
     
-    if(os.path.exists("adj_matrix_aug.npz")):
-        adj_matrix = sp.load_npz("adj_matrix_aug.npz")
+    if(os.path.exists(dataset_name +"_adj_matrix_aug.npz")):
+        adj_matrix = sp.load_npz(dataset_name+"_adj_matrix_aug.npz")
         return adj_matrix
     
+    path=dataset_name +"/"+dataset_name.upper()+"_A.txt"
+
     #vanno preparati 600 nodi globali, uno per grafo
-    nodes = 19580
-    nodes_tot = nodes+600
-    fake_matrix = np.array([[0 for i in range(nodes)] for k in range(600)])
+    nodes_tot = nodes+graphs
+    fake_matrix = np.array([[0 for i in range(nodes)] for k in range(graphs)])
     
     #preparazione righe aggiuntive per i nodi globali
-    node_ind = np.genfromtxt("enzymes/ENZYMES_graph_indicator.txt")
+    node_ind = np.genfromtxt(dataset_name+"/"+dataset_name.upper()+"_graph_indicator.txt")
     node_ind = node_ind.tolist()
     occ = [len(list(group)) for key, group in groupby(node_ind)]
     occ = add_one_by_one(occ) # serve per riempire la parte aggiunta della matrice di adiacenza
@@ -188,12 +193,12 @@ def build_adj_diag(nodes, idx, path):
     ranges = list(zip(occ[1:], occ))
     upper_idx, lower_idx = map(list, zip(*ranges))
 
-    for index in range(600):
+    for index in range(graphs):
         fake_matrix[index][(lower_idx[index] -1) : (upper_idx[index]-1)] = 1
 
     #lettura matrice d'adiacenza originale
     print("parsing original adj matrix")
-    tmpdata = np.genfromtxt("enzymes/ENZYMES_A.txt", dtype=np.dtype(str))
+    tmpdata = np.genfromtxt(path, dtype=np.dtype(str))
     ind1 = tmpdata[:, 1]
     ind2 = tmpdata[:, 0]
     adj_matrix = [[0 for i in range(nodes)] for k in range(nodes)]
@@ -206,25 +211,25 @@ def build_adj_diag(nodes, idx, path):
     
     #inserimento righe aggiuntive
     print("inserting global node rows:")
-    for i in range(600):
+    for i in range(graphs):
         adj_matrix = np.insert(adj_matrix, idx[i]+i, fake_matrix[i], axis=0)
         print("row: ")
         print(i)
 
     #preparazione colonne aggiuntive per i nodi globali
-    lower_idx_new = [0 for i in range(600)]
-    upper_idx_new = [0 for i in range(600)]  
-    for i in range(600):
+    lower_idx_new = [0 for i in range(graphs)]
+    upper_idx_new = [0 for i in range(graphs)]  
+    for i in range(graphs):
         lower_idx_new[i] = lower_idx[i]+i #riscalo l'indice perchè ho inserito 600 nuove righe
         upper_idx_new[i] = upper_idx[i]+i #riscalo l'indice perchè ho inserito 600 nuove righe
 
-    vert_padding = np.array([[0 for i in range(nodes_tot)] for k in range(600)])
-    for i in range(600):
+    vert_padding = np.array([[0 for i in range(nodes_tot)] for k in range(graphs)])
+    for i in range(graphs):
         vert_padding[i][(lower_idx_new[i]-1):(upper_idx_new[i]-1)] = 1
 
     #inserimento colonne aggiuntive
     print("inserting global node columns:")
-    for i in range(600):
+    for i in range(graphs):
         adj_matrix = np.insert(adj_matrix, idx[i]+i, vert_padding[i], axis=1)
         print("column: ")
         print(i)
@@ -233,6 +238,6 @@ def build_adj_diag(nodes, idx, path):
 
     adj_matrix = np.matrix(adj_matrix)
     adj_matrix = sp.coo_matrix(adj_matrix)
-    sp.save_npz("adj_matrix_aug", adj_matrix)
+    sp.save_npz(dataset_name + "_adj_matrix_aug", adj_matrix)
     #guarda se serve simmetrizzare la matrice come con cora.. 
     return adj_matrix
