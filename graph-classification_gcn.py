@@ -17,7 +17,7 @@ tf.set_random_seed(seed)
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, FRANKENSTEIN, PROTEINS
+flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, PROTEINS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 40, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
@@ -31,20 +31,22 @@ flags.DEFINE_integer('early_stopping', 15, 'Tolerance for early stopping (# of e
 if FLAGS.dataset=='ENZYMES':
     num_nodes = 19580
     num_graphs = 600
+    tot = 20180
     num_classes = 6
     num_feats = 18
     dataset_name = "enzymes"
-    splits = [[0,500], [500, 550], [550, 600]]
+    splits = [[0,300], [300, 400], [400, 600]]
 elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram
     num_nodes = 73283
     num_graphs = 4337
     num_classes = 2
     num_feats = 780
-    splits = [[0,3337], [3337, 4000], [4000, 4337]]
+    splits = [[0,2500], [2500, 3000], [3000, 4337]]
     dataset_name = "frankenstein"
 elif FLAGS.dataset=='PROTEINS': #questo sì
     num_nodes = 43471
     num_graphs = 1113
+    tot = 44584
     num_classes = 2
     num_feats = 29
     splits = [[0,900], [900, 1000], [1000, 1113]]

@@ -147,7 +147,7 @@ class GCNGraphs(BaseNet):
 
     def _build(self): 
         if self.featureless:
-            self.layers.append(ConvolutionalLayer(input_dim=20180,
+            self.layers.append(ConvolutionalLayer(input_dim=20180,  # 44584 aggiungilo come variabile, forse da support.. vedi un po'
                                             output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
