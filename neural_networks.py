@@ -129,7 +129,6 @@ class GCNGraphs(BaseNet):
         self.placeholders = placeholders
         self.featureless = featureless
         self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
-
         self.build()
 
     def _loss(self):
@@ -146,33 +145,25 @@ class GCNGraphs(BaseNet):
                                         self.placeholders['labels_mask'])
 
     def _build(self): 
-        if self.featureless:
-            self.layers.append(ConvolutionalLayer(input_dim=20180,  # 44584 aggiungilo come variabile, forse da support.. vedi un po'
+        self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
                                             output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=True,
-                                            featureless = True))
-        else:
-            self.layers.append(ConvolutionalLayer(input_dim=self.input_dim,
-                                            output_dim=FLAGS.hidden2,
-                                            placeholders=self.placeholders,
-                                            activation=tf.nn.relu,
-                                            dropout=True,
-                                            sparse_inputs=True,
-                                            featureless = False))
+                                            featureless = self.featureless))
 
-        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
+
+        """ self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
                                             output_dim=FLAGS.hidden1,
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
                                             sparse_inputs=False,
-                                            featureless = False))
+                                            featureless = False)) """
 
 
-        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
+        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
                                             activation=lambda x: x,

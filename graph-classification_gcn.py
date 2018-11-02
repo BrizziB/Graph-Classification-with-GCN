@@ -23,9 +23,9 @@ flags.DEFINE_integer('epochs', 40, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
 flags.DEFINE_boolean('featureless', True, 'If nodes are featureless')
 flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
-flags.DEFINE_float('dropout', 0.2, 'Dropout rate (1 - keep probability).')
+flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
-flags.DEFINE_integer('early_stopping', 15, 'Tolerance for early stopping (# of epochs).')
+flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
 
 
 if FLAGS.dataset=='ENZYMES':
@@ -41,7 +41,7 @@ elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram
     num_graphs = 4337
     num_classes = 2
     num_feats = 780
-    splits = [[0,2500], [2500, 3000], [3000, 4337]]
+    splits = [[0,2000], [2000, 2500], [2500, 4337]]
     dataset_name = "frankenstein"
 elif FLAGS.dataset=='PROTEINS': #questo sì
     num_nodes = 43471
@@ -49,9 +49,10 @@ elif FLAGS.dataset=='PROTEINS': #questo sì
     tot = 44584
     num_classes = 2
     num_feats = 29
-    splits = [[0,900], [900, 1000], [1000, 1113]]
+    splits = [[0,550], [550, 750], [750, 1113]]
     dataset_name = "proteins"
 
+#print ("training on: {} dataset").format(FLAGS.dataset)
 
 adj, features, labels, idx = load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name) #poi passalo al normalizzatore
 y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(num_graphs, labels, splits[0], splits[1], splits[2], idx)
@@ -63,15 +64,20 @@ num_supports = 1
 
 GCN_placeholders = {
     'support': [tf.sparse_placeholder(tf.float32) for i in range(num_supports)],
-    'feats': tf.sparse_placeholder(tf.float32, shape=tf.constant(features[2], dtype=tf.int64)), #a gcn serve sparso, dopo le prove rimettilo come sotto e aggiorna i placeholder di sage
+    'feats': tf.sparse_placeholder(tf.float32, shape=tf.constant(features[2], dtype=tf.int64)), 
     'labels': tf.placeholder(tf.float32, shape=(None, y_train.shape[1])),
     'labels_mask': tf.placeholder(tf.int32),
     'dropout': tf.placeholder_with_default(0., shape=()),
     'num_features_nonzero': tf.placeholder(tf.int32),  # helper variable for sparse dropout
 }
 
+if FLAGS.featureless:
+    input_dim = tot
+else:
+    input_dim = features[2][1]
+
 # Create network
-network = GCNGraphs(GCN_placeholders, input_dim=features[2][1], featureless=(FLAGS.featureless) )
+network = GCNGraphs(GCN_placeholders, input_dim, featureless=(FLAGS.featureless) )
 
 # Initialize session
 sess = tf.Session()

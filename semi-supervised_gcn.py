@@ -63,7 +63,7 @@ train_dict = build_dictionary_GCN(features, support, y_train, train_mask, GCN_pl
 train_dict.update({GCN_placeholders['dropout']: FLAGS.dropout})
 validation_dict = build_dictionary_GCN(features, support, y_val, val_mask, GCN_placeholders)
 
-def evaluate(features, support, labels, mask, placeholders): #pare che anche qui si cambino i pesi, quale loss usa ?
+def evaluate(features, support, labels, mask, placeholders): 
     t_test = time.time()
     feed_dict_val = build_dictionary_GCN(features, support, labels, mask, GCN_placeholders)
     outs_val = sess.run([network.loss, network.accuracy], feed_dict=feed_dict_val)
