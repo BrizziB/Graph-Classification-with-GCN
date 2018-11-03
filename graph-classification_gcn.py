@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import time
 import tensorflow as tf
-
+import matplotlib.pyplot as plt
 
 from file_utils import *
 from utils import *
@@ -17,11 +17,11 @@ tf.set_random_seed(seed)
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, PROTEINS
+flags.DEFINE_string('dataset', 'PROTEINS', 'which dataset to load') #ENZYMES, PROTEINS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('epochs', 40, 'Number of epochs to train.')
+flags.DEFINE_integer('epochs', 100, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
-flags.DEFINE_boolean('featureless', True, 'If nodes are featureless')
+flags.DEFINE_boolean('featureless', False, 'If nodes are featureless')
 flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
@@ -87,7 +87,9 @@ sess.run(tf.global_variables_initializer())
 cost_val = []
 train_dict = build_dictionary_GCN(features, support, y_train, train_mask, GCN_placeholders)
 train_dict.update({GCN_placeholders['dropout']: FLAGS.dropout})
-validation_dict = build_dictionary_GCN(features, support, y_val, val_mask, GCN_placeholders)
+
+train_loss = [0. for i in range(0, FLAGS.epochs)]
+val_loss = [0. for i in range(0, FLAGS.epochs)]
 
 def evaluate(features, support, labels, mask, placeholders): #pare che anche qui si cambino i pesi, quale loss usa ?
     t_test = time.time()
@@ -98,11 +100,11 @@ def evaluate(features, support, labels, mask, placeholders): #pare che anche qui
 # Train network
 for epoch in range(FLAGS.epochs):
     t = time.time()
-    # Construct feed dictionary
-    
 
     # Training step 
     train_out = sess.run([network.opt_op, network.loss, network.accuracy, network.outputs], feed_dict=train_dict)
+
+    train_loss[epoch] = train_out[1]
 
     # Validation
     t_test = time.time()
@@ -110,23 +112,32 @@ for epoch in range(FLAGS.epochs):
     cost, acc, duration = evaluate(features, support, y_val, val_mask, GCN_placeholders)
     cost_val.append(cost)
 
+    val_loss[epoch] = cost
+
     # Print results
     print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_out[1]),
           "train_acc=", "{:.5f}".format(train_out[2]), "val_loss=", "{:.5f}".format(cost),
           "val_acc=", "{:.5f}".format(acc), "time=", "{:.5f}".format(time.time() - t))
 
-    if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
+    """ if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
         print("Early stopping...")
-        break
+        break """
 
 network.save(sess)
 
 print("Optimization Finished!")
 
-#metti tolleranza per over fitting
 
 test_cost, test_acc, test_duration = evaluate(features, support, y_test, test_mask, GCN_placeholders)
 print("Test set results:", "cost=", "{:.5f}".format(test_cost),
       "accuracy=", "{:.5f}".format(test_acc), "time=", "{:.5f}".format(test_duration))
+
+epochs = [i for i in range(0, FLAGS.epochs)]
+plt.plot(np.array(epochs), np.array(train_loss), color='g')
+plt.plot(np.array(epochs), np.array(val_loss), color='orange')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Train and Validation loss over epochs with {} dataset'.format(dataset_name))
+plt.show()
 
 
