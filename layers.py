@@ -41,11 +41,7 @@ class Layer(object):
         with tf.name_scope(self.name):
             outputs = self._call(inputs)
             return outputs
-
-    def log_weights(self):
-        for w in self.weights:
-            tf.summary.histogram(self.name + '/weights/' + w, self.weights[w])
-
+            
 class ConvolutionalLayer(Layer):
     def __init__(self, input_dim, output_dim, placeholders, dropout,
                  sparse_inputs, activation, isLast=False, bias=False, featureless=False, **kwargs):
@@ -97,47 +93,3 @@ class ConvolutionalLayer(Layer):
             output += self.weights['bias']
 
         return self.activation(output)
-
-class DenseLayer(Layer):
-    def __init__(self, input_dim, output_dim, dropout, sparse_inputs,
-                 placeholders=None, activation=tf.nn.relu, bias=False, featureless=False, **kwargs):
-        super(DenseLayer, self).__init__(**kwargs)
-        self.dropout=0.5
-
-        if dropout:
-            self.dropout = placeholders['dropout']
-        else:
-            self.dropout = 0.
-
-        self.activation = activation
-        self.sparse_inputs = sparse_inputs
-        self.featureless = featureless
-        self.bias = bias
-
-        # helper variable for sparse dropout
-        #self.num_features_nonzero = placeholders['num_features_nonzero']
-
-        with tf.variable_scope(self.name + '_weights'):
-            self.weights['weights'] = glorot([input_dim, output_dim],
-                                          name='weights')
-            if self.bias:
-                self.weights['bias'] = zeros([output_dim], name='bias')
-
-
-    def _call(self, inputs):
-        x = inputs
-
-        # applico il dropout
-        #if self.sparse_inputs:
-        #    x = sparse_dropout(x, 1-self.dropout, self.num_features_nonzero)
-        #else:
-        x = tf.nn.dropout(x, 1-self.dropout)
-
-        # la moltiplicazione fra features e pesi - in questo consiste il layer dense
-        output = dot(x, self.weights['weights'], sparse=self.sparse_inputs)
-
-        # eventualmente applico il bias sommandolo all'output
-        if self.bias:
-            output += self.weights['bias']
-
-        return self.activation(output) #l'uscita passa prima per la funzione di attivazione - una relu
