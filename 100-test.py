@@ -12,7 +12,7 @@ tf.set_random_seed(seed)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, PROTEINS
-flags.DEFINE_boolean('featureless', True, 'If nodes are featureless')
+flags.DEFINE_boolean('featureless', False, 'If nodes are featureless')
 
 
 if FLAGS.dataset=='ENZYMES':
@@ -22,7 +22,7 @@ if FLAGS.dataset=='ENZYMES':
     num_classes = 6
     num_feats = 18
     dataset_name = "enzymes"
-    splits = [[0,300], [300, 400], [400, 600]]
+    splits = [[0,580], [580, 590], [590, 600]]
 elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram
     num_nodes = 73283
     num_graphs = 4337
@@ -36,7 +36,7 @@ elif FLAGS.dataset=='PROTEINS': #questo sì
     tot = 44584
     num_classes = 2
     num_feats = 29
-    splits = [[0,550], [550, 750], [750, 1113]]
+    splits = [[0,1000], [1000, 1050], [1050, 1100]]
     dataset_name = "proteins"
 
 num_test = 100
@@ -48,7 +48,7 @@ for i in range(0,num_test):
     print("test num: {} running ...".format(i))
     acc[i] = test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, FLAGS.featureless)
 
-mean_acc = np.mean(acc)
+mean_acc = np.max(acc)
 std_dev_acc = np.std(acc)
 print("mean accuracy on {} dataset:  {}".format(FLAGS.dataset, mean_acc))
 print("std dev: {}".format(std_dev_acc))

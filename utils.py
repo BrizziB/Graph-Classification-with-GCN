@@ -26,6 +26,7 @@ def sparse_to_tuple(sparse_mat):
 #normalizza la matrice delle feature per riga e la trasforma in tupla
 def process_features(features):
     features /= features.sum(1).reshape(-1, 1)
+    features[np.isnan(features) | np.isinf(features)] = 0 #serve per le features dei nodi globali, che sono di soli 0.
     return sparse_to_tuple(sp.csr_matrix(features))
 
 #renormalization trick della matrice di adiacenza

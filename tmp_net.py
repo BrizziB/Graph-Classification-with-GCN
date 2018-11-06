@@ -17,9 +17,9 @@ tf.set_random_seed(seed)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('epochs', 40, 'Number of epochs to train.')
+flags.DEFINE_integer('epochs', 250, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
@@ -59,7 +59,7 @@ def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is
     sess.run(tf.global_variables_initializer())
 
     cost_val = []
-    train_dict = build_dictionary_GCN(features, support, y_train, train_mask, GCN_placeholders)
+    train_dict = build_dictionary_GCN(features, support, y_train, train_mask, GCN_placeholders) 
     train_dict.update({GCN_placeholders['dropout']: FLAGS.dropout})
 
     def evaluate(features, support, labels, mask, placeholders):

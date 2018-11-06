@@ -82,6 +82,29 @@ def get_splits(labels, train_dim, val_dim, test_dim):
 
     return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
 
+def get_splits_graphs_basic(num_graphs, labels, train_dim, val_dim, test_dim, idx):
+
+    #random.shuffle(idx) #fondamentale
+
+    train_ind = [idx[train_dim[0] : train_dim[1]]]
+    val_ind = [idx[val_dim[0] : val_dim[1]]]
+    test_ind = [idx[test_dim[0] : test_dim[1]]]
+
+    labels_train = np.zeros(labels.shape, dtype=np.int32)
+    labels_val = np.zeros(labels.shape, dtype=np.int32)
+    labels_test = np.zeros(labels.shape, dtype=np.int32)
+
+    labels_train[train_ind] = labels[train_ind]
+    labels_val[val_ind] = labels[val_ind]
+    labels_test[test_ind] = labels[test_ind]
+
+    train_mask = sample_mask(train_ind, labels.shape[0])
+    val_mask = sample_mask(val_ind, labels.shape[0])
+    test_mask = sample_mask(test_ind, labels.shape[0])
+
+    return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
+
+
 def get_splits_graphs(num_graphs, labels, train_dim, val_dim, test_dim, idx):
 
     idx_incr = np.array([i for i in range(num_graphs)])
@@ -106,7 +129,13 @@ def get_splits_graphs(num_graphs, labels, train_dim, val_dim, test_dim, idx):
 
     return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
 
-
+def load_data_basic(num_nodes, num_graphs, num_classes, dim_feats, dataset_name):
+    global_nodes_idx = find_insert_position(dataset_name)
+    adj_matrix = build_adj_diag_basic(num_nodes, num_graphs, dataset_name)
+    node_feats = build_feats_basic(num_nodes, num_graphs, dim_feats, dataset_name)
+    graph_labels = build_labels_basic(num_graphs, num_classes, num_nodes, dataset_name)
+    global_nodes_idx = []
+    return adj_matrix, node_feats, graph_labels, global_nodes_idx
 
 def load_data(num_nodes, num_graphs, num_classes, dim_feats, dataset_name):
 
@@ -114,7 +143,7 @@ def load_data(num_nodes, num_graphs, num_classes, dim_feats, dataset_name):
 
     adj_matrix = build_adj_diag(num_nodes, num_graphs, global_nodes_idx, dataset_name)
 
-    node_feats = build_feats_vertConc_mean_features(global_nodes_idx, num_nodes, num_graphs, dim_feats, dataset_name)
+    node_feats = build_feats_vertConc(global_nodes_idx, num_nodes, num_graphs, dim_feats, dataset_name)
 
     graph_labels = build_labels_vertConc(num_graphs, num_classes, num_nodes, global_nodes_idx, dataset_name) #codifica one-hot
     
@@ -128,6 +157,17 @@ def find_insert_position(dataset_name):
     fake_idx = fake_idx + 1
     fake_idx = np.insert(fake_idx, 0, 0)
     return fake_idx
+
+def build_labels_basic(graphs, num_classes, num_nodes, dataset_name ):
+    if(os.path.exists(dataset_name +"_labels_basic.npy")):
+            labels = np.load(dataset_name +"_labels_basic.npy")
+            return labels
+
+    path=dataset_name +"/"+dataset_name.upper()+"_graph_labels.txt"
+    true_labels = np.loadtxt(path, dtype='i', delimiter=',') #prova
+    labels = encode_onehot(true_labels)
+    np.save(dataset_name +"_labels_basic.npy", labels)
+    return labels
 
 def build_labels_vertConc(graphs, num_classes, num_nodes, idx, dataset_name ):
     
@@ -150,6 +190,18 @@ def build_labels_vertConc(graphs, num_classes, num_nodes, idx, dataset_name ):
     np.save(dataset_name +"_labels_aug.npy", labels)
     return labels
 
+def build_feats_basic(num_nodes, graphs, dim_feats, dataset_name):
+    if(os.path.exists(dataset_name+"_feats_matrix_basic.npz")):
+        feats_matrix = sp.load_npz(dataset_name+"_feats_matrix_basic.npz")
+        return feats_matrix
+
+    path=dataset_name +"/"+dataset_name.upper()+"_node_attributes.txt" 
+
+    feats_matrix = np.loadtxt(path, delimiter=',')
+    feats_matrix = sp.csr_matrix(feats_matrix)
+    sp.save_npz(dataset_name+"_feats_matrix_basic", feats_matrix)
+    return feats_matrix
+
 def build_feats_vertConc(idx, num_nodes, graphs, dim_feats, dataset_name):
     if(os.path.exists(dataset_name+"_feats_matrix_aug.npz")):
         feats_matrix = sp.load_npz(dataset_name+"_feats_matrix_aug.npz")
@@ -158,7 +210,7 @@ def build_feats_vertConc(idx, num_nodes, graphs, dim_feats, dataset_name):
     path=dataset_name +"/"+dataset_name.upper()+"_node_attributes.txt" 
 
     feats_matrix = np.loadtxt(path, delimiter=',')
-    fake_feats = np.array([[0. for i in range(dim_feats)] for k in range(graphs)]) #qui sarebbero da inizializzare a zero ma poi la softmax schianta*
+    fake_feats = np.array([[0. for i in range(dim_feats)] for k in range(graphs)])
     #inserimento righe aggiuntive
     print("inserting global node rows:")
     for i in range(graphs):
@@ -166,10 +218,10 @@ def build_feats_vertConc(idx, num_nodes, graphs, dim_feats, dataset_name):
         print("row: ")
         print(i)
 
+    feats_matrix = np.absolute(feats_matrix)
     feats_matrix = sp.csr_matrix(feats_matrix)
     sp.save_npz(dataset_name+"_feats_matrix_aug", feats_matrix)
     return feats_matrix
-
 
 def build_feats_vertConc_mean_features(idx,num_nodes, graphs, dim_feats, dataset_name):
     if(os.path.exists(dataset_name+"_feats_matrix_aug_with_mean.npz")):
@@ -193,6 +245,27 @@ def build_feats_vertConc_mean_features(idx,num_nodes, graphs, dim_feats, dataset
     sp.save_npz(dataset_name+"_feats_matrix_aug_with_mean", feats_matrix)
     return feats_matrix
 
+def build_adj_diag_basic(nodes, graphs, dataset_name):
+    if(os.path.exists(dataset_name +"_adj_matrix_basic.npz")):
+        adj_matrix = sp.load_npz(dataset_name+"_adj_matrix_basic.npz")
+        return adj_matrix
+    
+    path=dataset_name +"/"+dataset_name.upper()+"_A.txt"
+    tmpdata = np.genfromtxt(path, dtype=np.dtype(str))
+    ind1 = tmpdata[:, 1]
+    ind2 = tmpdata[:, 0]
+    adj_matrix = [[0 for i in range(nodes)] for k in range(nodes)]
+    for i in range(len(ind1)):
+        u = ind1[i]
+        v = ind2[i]
+        u = int(u)      #vanno letti come stringhe
+        v = int(v[:-1]) #aggiustamenti per eliminare la virgola del file 
+        adj_matrix[u-1][v-1] = 1 
+
+    adj_matrix = np.matrix(adj_matrix)
+    adj_matrix = sp.coo_matrix(adj_matrix)
+    sp.save_npz(dataset_name + "_adj_matrix_basic", adj_matrix)
+    return adj_matrix
 
 #dal file ENZYMES_A costruisce una matrice diagonale a blocchi contenente le matrici di adiacenza di ogni grafo (un grafo per blocco)
 def build_adj_diag(nodes, graphs, idx, dataset_name):
@@ -257,10 +330,8 @@ def build_adj_diag(nodes, graphs, idx, dataset_name):
         print("column: ")
         print(i)
 
-    #dovrebbe andare bene in questo modo, in caso di risultati pessimi ricontrolla gli indici
 
     adj_matrix = np.matrix(adj_matrix)
     adj_matrix = sp.coo_matrix(adj_matrix)
     sp.save_npz(dataset_name + "_adj_matrix_aug", adj_matrix)
-    #guarda se serve simmetrizzare la matrice come con cora.. 
     return adj_matrix

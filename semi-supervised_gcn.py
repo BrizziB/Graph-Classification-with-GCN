@@ -89,7 +89,9 @@ for epoch in range(FLAGS.epochs):
           "train_acc=", "{:.5f}".format(train_out[2]), "val_loss=", "{:.5f}".format(cost),
           "val_acc=", "{:.5f}".format(acc), "time=", "{:.5f}".format(time.time() - t))
 
-network.save(sess)
+    if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
+        print("Early stopping...")
+        break
 
 print("Optimization Finished!")
 

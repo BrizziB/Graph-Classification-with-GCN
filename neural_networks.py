@@ -105,7 +105,8 @@ class GCN(BaseNet):
                                             placeholders=self.placeholders,
                                             activation=tf.nn.relu,
                                             dropout=True,
-                                            sparse_inputs=True))
+                                            sparse_inputs=True,
+                                            featureless=False))
 
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
                                             output_dim=self.output_dim,
@@ -136,7 +137,7 @@ class GCNGraphs(BaseNet):
         for var in self.layers[0].weights.values():
             self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
 
-        #cross entropy loss
+        #cross entropy loss dopo aver applicato un softmax layer
         self.loss += masked_cross_entropy(self.outputs, self.placeholders['labels'],
                                                   self.placeholders['labels_mask'])
 
@@ -152,15 +153,6 @@ class GCNGraphs(BaseNet):
                                             dropout=True,
                                             sparse_inputs=True,
                                             featureless = self.featureless))
-
-
-        """ self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
-                                            output_dim=FLAGS.hidden1,
-                                            placeholders=self.placeholders,
-                                            activation=tf.nn.relu,
-                                            dropout=True,
-                                            sparse_inputs=False,
-                                            featureless = False)) """
 
 
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
