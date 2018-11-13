@@ -25,11 +25,15 @@ flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
 
 
+def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is_featureless, is_pooling):
 
-def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is_featureless):
+    if not is_pooling:
+        adj, features, labels, idx = load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name) #poi passalo al normalizzatore
+        y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(num_graphs, labels, splits[0], splits[1], splits[2], idx)
 
-    adj, features, labels, idx = load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name) 
-    y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(num_graphs, labels, splits[0], splits[1], splits[2], idx)
+    else:
+        adj, features, labels, idx = load_data_basic(num_nodes, num_graphs, num_classes, num_feats, dataset_name) 
+        y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs_basic(num_graphs, labels, splits[0], splits[1], splits[2], idx)
 
     support = [preprocess_adj(adj, True, True)]
     features = process_features(features)
@@ -37,6 +41,7 @@ def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is
     num_supports = 1
 
     GCN_placeholders = {
+        'idx' :tf.placeholder(tf.int32),
         'support': [tf.sparse_placeholder(tf.float32) for i in range(num_supports)],
         'feats': tf.sparse_placeholder(tf.float32, shape=tf.constant(features[2], dtype=tf.int64)), 
         'labels': tf.placeholder(tf.float32, shape=(None, y_train.shape[1])),
@@ -45,13 +50,17 @@ def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is
         'num_features_nonzero': tf.placeholder(tf.int32),  # helper variable for sparse dropout
     }
 
-    if is_featureless:
-        input_dim = num_nodes+num_graphs
+    if  is_featureless:
+        if not is_pooling:
+            input_dim = num_nodes + num_graphs
+        else:
+            input_dim = num_nodes
     else:
         input_dim = features[2][1]
 
     # Create network
-    network = GCNGraphs(GCN_placeholders, input_dim, featureless=is_featureless )
+    featureless = (FLAGS.featureless)
+    network = GCNGraphs(GCN_placeholders, input_dim, featureless, idx, num_graphs, num_nodes, FLAGS.with_pooling)
 
     # Initialize session
     sess = tf.Session()

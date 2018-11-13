@@ -119,6 +119,6 @@ class PoolingLayer(Layer):
             pooling_matrix[i, range(idx_aug[i], idx_aug[i+1])] = (1/(idx_aug[i+1]-idx_aug[i]))
 
         output = dot(tf.cast(pooling_matrix, tf.float32), inputs, sparse = False)
-
+    
 
         return self.activation(output)

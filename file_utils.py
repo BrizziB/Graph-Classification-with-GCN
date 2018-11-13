@@ -84,10 +84,10 @@ def get_splits(labels, train_dim, val_dim, test_dim):
 
 def get_splits_graphs_basic(num_graphs, labels, train_dim, val_dim, test_dim, oldidx):
 
-    #idx = np.array([i for i in range(num_graphs)])
-    idx = np.concatenate( (np.array([range(0,98)]), np.array([range(100,198)]), np.array([range(200,298)]), np.array([range(300,398)]), np.array([range(400,498)]), np.array([range(500,598)])), axis=None ) 
-    idx = np.concatenate( (idx, np.array(range(98,100)), np.array(range(198,200)), np.array(range(298,300)), np.array(range(398,400)), np.array(range(498,500)), np.array(range(598,600))), axis=None )
-    #random.shuffle(idx)
+    idx = np.array([i for i in range(num_graphs)])
+    #idx = np.concatenate( (np.array([range(0,98)]), np.array([range(100,198)]), np.array([range(200,298)]), np.array([range(300,398)]), np.array([range(400,498)]), np.array([range(500,598)])), axis=None ) 
+    #idx = np.concatenate( (idx, np.array(range(98,100)), np.array(range(198,200)), np.array(range(298,300)), np.array(range(398,400)), np.array(range(498,500)), np.array(range(598,600))), axis=None )
+    random.shuffle(idx)
     
     train_ind = [idx[train_dim[0] : train_dim[1]]]
     val_ind = [idx[val_dim[0] : val_dim[1]]]
@@ -258,6 +258,7 @@ def build_adj_diag_basic(nodes, graphs, dataset_name):
     ind2 = tmpdata[:, 0]
     adj_matrix = [[0 for i in range(nodes)] for k in range(nodes)]
     for i in range(len(ind1)):
+        print(i)
         u = ind1[i]
         v = ind2[i]
         u = int(u)      #vanno letti come stringhe
