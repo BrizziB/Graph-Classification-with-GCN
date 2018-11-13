@@ -82,10 +82,13 @@ def get_splits(labels, train_dim, val_dim, test_dim):
 
     return labels_train, labels_val, labels_test, train_ind, val_ind, test_ind, train_mask, val_mask, test_mask
 
-def get_splits_graphs_basic(num_graphs, labels, train_dim, val_dim, test_dim, idx):
+def get_splits_graphs_basic(num_graphs, labels, train_dim, val_dim, test_dim, oldidx):
 
-    #random.shuffle(idx) #fondamentale
-
+    #idx = np.array([i for i in range(num_graphs)])
+    idx = np.concatenate( (np.array([range(0,98)]), np.array([range(100,198)]), np.array([range(200,298)]), np.array([range(300,398)]), np.array([range(400,498)]), np.array([range(500,598)])), axis=None ) 
+    idx = np.concatenate( (idx, np.array(range(98,100)), np.array(range(198,200)), np.array(range(298,300)), np.array(range(398,400)), np.array(range(498,500)), np.array(range(598,600))), axis=None )
+    #random.shuffle(idx)
+    
     train_ind = [idx[train_dim[0] : train_dim[1]]]
     val_ind = [idx[val_dim[0] : val_dim[1]]]
     test_ind = [idx[test_dim[0] : test_dim[1]]]
@@ -134,7 +137,6 @@ def load_data_basic(num_nodes, num_graphs, num_classes, dim_feats, dataset_name)
     adj_matrix = build_adj_diag_basic(num_nodes, num_graphs, dataset_name)
     node_feats = build_feats_basic(num_nodes, num_graphs, dim_feats, dataset_name)
     graph_labels = build_labels_basic(num_graphs, num_classes, num_nodes, dataset_name)
-    global_nodes_idx = []
     return adj_matrix, node_feats, graph_labels, global_nodes_idx
 
 def load_data(num_nodes, num_graphs, num_classes, dim_feats, dataset_name):

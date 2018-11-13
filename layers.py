@@ -85,11 +85,40 @@ class ConvolutionalLayer(Layer):
             else:
                 pre_sup = self.weights['weights_' + str(i)]
             support = dot(self.support[i], pre_sup, sparse=True)
+            
             supports.append(support)
         output = tf.add_n(supports)
 
         # bias
         if self.bias:
             output += self.weights['bias']
+
+        return self.activation(output)
+
+class PoolingLayer(Layer):
+    def __init__(self, num_graphs, num_nodes, idx, input_dim, output_dim, placeholders,
+                 sparse_inputs, activation, isLast=False, bias=False, featureless=False, **kwargs):
+        super(PoolingLayer, self).__init__(**kwargs)
+
+        self.num_nodes = num_nodes
+        self.num_graphs = num_graphs
+        self.activation = activation
+        self.output_dim = output_dim
+        self.input_dim = input_dim
+        self.idx = idx
+
+    def _call(self, inputs):
+        #pooling_matrix = 0 #matrice con righe = num nodi, colonne = num grafi
+        
+        pooling_matrix = np.array([[0. for i in range(self.num_nodes)] for k in range(self.num_graphs)])
+        idx_aug = np.append(self.idx, self.num_nodes-1)
+        idx_aug = idx_aug.astype(int)
+
+
+        for i in range(self.num_graphs):
+            pooling_matrix[i, range(idx_aug[i], idx_aug[i+1])] = (1/(idx_aug[i+1]-idx_aug[i]))
+
+        output = dot(tf.cast(pooling_matrix, tf.float32), inputs, sparse = False)
+
 
         return self.activation(output)

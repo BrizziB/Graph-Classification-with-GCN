@@ -121,9 +121,13 @@ class GCN(BaseNet):
 
 
 class GCNGraphs(BaseNet):
-    def __init__(self, placeholders, input_dim, featureless, **kwargs):
+    def __init__(self, placeholders, input_dim, featureless, idx, num_graphs, num_nodes, with_pooling, **kwargs):
         super(GCNGraphs, self).__init__(**kwargs)
 
+        self.pooling = with_pooling
+        self.num_graphs = num_graphs
+        self.num_nodes = num_nodes
+        self.idx = idx
         self.inputs = placeholders['feats']
         self.input_dim = input_dim
         self.output_dim = placeholders['labels'].get_shape().as_list()[1]
@@ -162,7 +166,14 @@ class GCNGraphs(BaseNet):
                                             dropout=True,
                                             sparse_inputs=False,
                                             featureless = False))
-
+        if self.pooling:
+            self.layers.append(PoolingLayer(    num_graphs = self.num_graphs, num_nodes = self.num_nodes, idx=self.idx,
+                                                input_dim=self.output_dim,
+                                                output_dim=self.output_dim,
+                                                placeholders=self.placeholders,
+                                                activation=lambda x: x,
+                                                sparse_inputs=False,
+                                                featureless = False))
         
 
 
