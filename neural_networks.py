@@ -159,6 +159,23 @@ class GCNGraphs(BaseNet):
                                             featureless = self.featureless))
 
 
+        """         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
+                                            output_dim= FLAGS.hidden1,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=False,
+                                            featureless = False))
+
+
+        self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden1,
+                                            output_dim=FLAGS.hidden3,
+                                            placeholders=self.placeholders,
+                                            activation=tf.nn.relu,
+                                            dropout=True,
+                                            sparse_inputs=False,
+                                            featureless = False)) """
+        
         self.layers.append(ConvolutionalLayer(input_dim=FLAGS.hidden2,
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
@@ -166,6 +183,7 @@ class GCNGraphs(BaseNet):
                                             dropout=True,
                                             sparse_inputs=False,
                                             featureless = False))
+
         if self.pooling:
             self.layers.append(PoolingLayer(    num_graphs = self.num_graphs, num_nodes = self.num_nodes, idx=self.idx,
                                                 input_dim=self.output_dim,

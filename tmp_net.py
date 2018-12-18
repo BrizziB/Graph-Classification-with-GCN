@@ -17,9 +17,10 @@ tf.set_random_seed(seed)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('epochs', 250, 'Number of epochs to train.')
-flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('epochs', 200   , 'Number of epochs to train.')
+flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden3', 32, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
@@ -70,6 +71,8 @@ def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is
     cost_val = []
     train_dict = build_dictionary_GCN(features, support, y_train, train_mask, GCN_placeholders) 
     train_dict.update({GCN_placeholders['dropout']: FLAGS.dropout})
+    train_loss = [0. for i in range(0, FLAGS.epochs)]
+    val_loss = [0. for i in range(0, FLAGS.epochs)]
 
     def evaluate(features, support, labels, mask, placeholders):
         t_test = time.time()
@@ -79,13 +82,25 @@ def test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, is
 
     # Train network
     for epoch in range(FLAGS.epochs):
+        t = time.time()
         # Training step 
         train_out = sess.run([network.opt_op, network.loss, network.accuracy, network.outputs], feed_dict=train_dict)
+        train_loss[epoch] = train_out[1]
         # Validation
+        t_test = time.time()
         cost, acc, duration = evaluate(features, support, y_val, val_mask, GCN_placeholders)
         cost_val.append(cost)
-        if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
-            break
+
+        val_loss[epoch] = cost
+
+        # Print results
+        print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_out[1]),
+            "train_acc=", "{:.5f}".format(train_out[2]), "val_loss=", "{:.5f}".format(cost),
+            "val_acc=", "{:.5f}".format(acc), "time=", "{:.5f}".format(time.time() - t))
+
+        """ if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
+            print("Early stopping...")
+            break """   
     #test phase
     test_cost, test_acc, test_duration = evaluate(features, support, y_test, test_mask, GCN_placeholders)
     print("completed ")

@@ -8,10 +8,10 @@ seed = 123
 np.random.seed(seed)
 tf.set_random_seed(seed)
 
-# Settings
+# Settings0
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('dataset', 'PROTEINS', 'which dataset to load') #ENZYMES, PROTEINS
+flags.DEFINE_string('dataset', 'FRANKENSTEIN', 'which dataset to load') #ENZYMES, PROTEINS
 flags.DEFINE_boolean('with_pooling', True, 'is a mean value for graph labels is computed via pooling(True) or via global nodes(False)')
 flags.DEFINE_boolean('featureless', False, 'If nodes are featureless')
 
@@ -23,15 +23,14 @@ if FLAGS.dataset=='ENZYMES':
     num_classes = 6
     num_feats = 18
     dataset_name = "enzymes"
-    splits = [[0,594], [590, 590], [594, 600]]
+    splits = [[0,540], [540, 540], [540, 600]]
 
-elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram per i nodi globali
-    num_nodes = 73283
-    num_graphs = 4337
-    tot = 0
+elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram - ridotto
+    num_nodes = 40001
+    num_graphs = 2432
     num_classes = 2
     num_feats = 780
-    splits = [[0,2000], [2000, 2500], [2500, 4337]]
+    splits = [[0,2220], [2300, 2300], [2220, 2432]]
     dataset_name = "frankenstein"
 
 elif FLAGS.dataset=='PROTEINS': #questo sì
@@ -43,7 +42,7 @@ elif FLAGS.dataset=='PROTEINS': #questo sì
     splits = [[0,1000], [1000, 1000], [1000, 1100]]
     dataset_name = "proteins"
 
-num_test = 10
+num_test = 15
 
 
 acc=[0. for i in range(0, num_test)]
@@ -52,7 +51,7 @@ for i in range(0,num_test):
     print("test num: {} running ...".format(i))
     acc[i] = test(num_nodes, num_graphs, num_classes, num_feats, dataset_name, splits, FLAGS.featureless, FLAGS.with_pooling)
 
-mean_acc = np.max(acc)
+mean_acc = np.mean(acc)
 std_dev_acc = np.std(acc)
 print("mean accuracy on {} dataset:  {}".format(FLAGS.dataset, mean_acc))
 print("std dev: {}".format(std_dev_acc))

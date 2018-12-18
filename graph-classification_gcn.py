@@ -17,13 +17,14 @@ tf.set_random_seed(seed)
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('dataset', 'FRANKENSTEIN', 'which dataset to load') #ENZYMES, PROTEINS
-flags.DEFINE_boolean('with_pooling', True, 'is a mean value for graph labels is computed via pooling(True) or via global nodes(False)')
+flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, PROTEINS
+flags.DEFINE_boolean('with_pooling', False, 'is a mean value for graph labels is computed via pooling(True) or via global nodes(False)')
 flags.DEFINE_boolean('featureless', False, 'If nodes are featureless') #only if with_pooling = False
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden3', 16, 'Number of units in hidden layer 3.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
@@ -36,7 +37,7 @@ if FLAGS.dataset=='ENZYMES':
     num_classes = 6
     num_feats = 18
     dataset_name = "enzymes"
-    splits = [[0,588], [540, 540], [588, 600]]
+    splits = [[0,500], [500, 520], [520, 600]]
 
 elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram - ridotto
     num_nodes = 40001
@@ -52,7 +53,7 @@ elif FLAGS.dataset=='PROTEINS': #questo sì
     tot = 44584
     num_classes = 2
     num_feats = 29
-    splits = [[0,1000], [1000, 1000], [1000, 1113]]
+    splits = [[0,900], [900, 1000], [1000, 1113]]
     dataset_name = "proteins"
 
 if not FLAGS.with_pooling:
