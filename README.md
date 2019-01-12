@@ -3,11 +3,11 @@ Based on
       Semi-Supervised Classification with Graph Convolutional Networks - Thomas N. Kipf, Max Welling.
       link: https://arxiv.org/abs/1609.02907
 
-  the code: 
+  code: 
       https://github.com/tkipf/gcn.
 
 
-This GCN implementation tries to handle graph-classification tasks in two (similar) ways:
+This Tensorflow implementation of GCN tries to handle graph-classification tasks in two (similar) ways:
 
 1. "global node" approach - for each graph, a global node is added, only global nodes are classified
 2. global mean pooling approacah - added a mean-pooling layer as the last layer (before softmax) in GCN
