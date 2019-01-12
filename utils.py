@@ -67,7 +67,7 @@ def masked_accuracy(predictions, labels, mask):
     return tf.reduce_mean(accuracy_all)
 
 #  ----------------------- init -----------------------------------------------
-#inizializzatore di pesi secondo Glorot&Bengio  - vedi come funziona 
+#inizializzatore di pesi secondo Glorot&Bengio
 def glorot(shape, name=None):
     init_range = np.sqrt(6.0/(shape[0]+shape[1]))
     val = tf.random_uniform(shape, minval=-init_range, maxval=init_range, dtype=tf.float32)

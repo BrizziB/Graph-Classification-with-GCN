@@ -108,7 +108,8 @@ class PoolingLayer(Layer):
         self.idx = idx
 
     def _call(self, inputs):
-        #pooling_matrix = 0 #matrice con righe = num nodi, colonne = num grafi
+        #pooling_matrix = 0
+        #matrice con: righe = num nodi e colonne = num grafi
         
         pooling_matrix = np.array([[0. for i in range(self.num_nodes)] for k in range(self.num_graphs)])
         idx_aug = np.append(self.idx, self.num_nodes-1)

@@ -17,7 +17,7 @@ tf.set_random_seed(seed)
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('dataset', 'ENZYMES', 'which dataset to load') #ENZYMES, PROTEINS
+flags.DEFINE_string('dataset', 'PROTEINS', 'which dataset to load')  # PROTEINS
 flags.DEFINE_boolean('with_pooling', False, 'is a mean value for graph labels is computed via pooling(True) or via global nodes(False)')
 flags.DEFINE_boolean('featureless', False, 'If nodes are featureless') #only if with_pooling = False
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
@@ -30,39 +30,26 @@ flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
 
 
-if FLAGS.dataset=='ENZYMES':
-    num_nodes = 19580
-    num_graphs = 600
-    tot = 20180
-    num_classes = 6
-    num_feats = 18
-    dataset_name = "enzymes"
-    splits = [[0,500], [500, 520], [520, 600]]
 
-elif FLAGS.dataset=='FRANKENSTEIN': #non entra in memoria con 16gb di ram - ridotto
-    num_nodes = 40001
-    num_graphs = 2432
-    num_classes = 2
-    num_feats = 780
-    splits = [[0,2300], [2300, 2350], [2350, 2432]]
-    dataset_name = "frankenstein"
-
-elif FLAGS.dataset=='PROTEINS': #questo sì
+if FLAGS.dataset=='PROTEINS':
     num_nodes = 43471
     num_graphs = 1113
     tot = 44584
     num_classes = 2
     num_feats = 29
-    splits = [[0,900], [900, 1000], [1000, 1113]]
+    splits = [[0,1000], [1000, 1000], [1000, 1100]]
     dataset_name = "proteins"
 
-if not FLAGS.with_pooling:
-    adj, features, labels, idx = load_data(num_nodes, num_graphs, num_classes, num_feats, dataset_name) #poi passalo al normalizzatore
-    y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(num_graphs, labels, splits[0], splits[1], splits[2], idx)
+if not FLAGS.with_pooling: #global nodes approach
 
-else:
+    adj, features, labels, idx = load_data (num_nodes, num_graphs, num_classes, num_feats, dataset_name) 
+
+    y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs(
+        num_graphs, labels, splits[0], splits[1], splits[2], idx)
+
+else: #global mean pooling approach
     adj, features, labels, idx = load_data_basic(num_nodes, num_graphs, num_classes, num_feats, dataset_name) 
-    print("prodotte adj, node attributes e labels")
+    print("adjacency, attributes and labels parsed")
     y_train, y_val, y_test, idx_train, idx_val, idx_test, train_mask, val_mask, test_mask = get_splits_graphs_basic(num_graphs, labels, splits[0], splits[1], splits[2], idx)
 
 print("normalizzo adj e node attributes")
@@ -105,7 +92,7 @@ train_dict.update({GCN_placeholders['dropout']: FLAGS.dropout})
 train_loss = [0. for i in range(0, FLAGS.epochs)]
 val_loss = [0. for i in range(0, FLAGS.epochs)]
 
-def evaluate(features, support, labels, mask, placeholders): #pare che anche qui si cambino i pesi, quale loss usa ?
+def evaluate(features, support, labels, mask, placeholders):
     t_test = time.time()
     feed_dict_val = build_dictionary_GCN(features, support, labels, mask, GCN_placeholders)
     outs_val = sess.run([network.loss, network.accuracy], feed_dict=feed_dict_val)
@@ -117,41 +104,24 @@ for epoch in range(FLAGS.epochs):
 
     # Training step 
     train_out = sess.run([network.opt_op, network.loss, network.accuracy, network.outputs], feed_dict=train_dict)
-
     train_loss[epoch] = train_out[1]
 
-    # Validation
-    t_test = time.time()
-
-    cost, acc, duration = evaluate(features, support, y_val, val_mask, GCN_placeholders)
-    cost_val.append(cost)
-
-    val_loss[epoch] = cost
-
     # Print results
-    print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_out[1]),
-          "train_acc=", "{:.5f}".format(train_out[2]), "val_loss=", "{:.5f}".format(cost),
-          "val_acc=", "{:.5f}".format(acc), "time=", "{:.5f}".format(time.time() - t))
-
-    """ if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
-        print("Early stopping...")
-        break """  
-
-network.save(sess)
+    print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_out[1]), "train_acc=", "{:.5f}".format(train_out[2]))
 
 print("Optimization Finished!")
 
 
 test_cost, test_acc, test_duration = evaluate(features, support, y_test, test_mask, GCN_placeholders)
-print("Test set results:", "cost=", "{:.5f}".format(test_cost),
-      "accuracy=", "{:.5f}".format(test_acc), "time=", "{:.5f}".format(test_duration))
+
+print("Test set results:", "cost=", "{:.5f}".format(test_cost), "accuracy=", "{:.5f}".format(test_acc))
 
 epochs = [i for i in range(0, FLAGS.epochs)]
 plt.plot(np.array(epochs), np.array(train_loss), color='g')
 plt.plot(np.array(epochs), np.array(val_loss), color='orange')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
-plt.title('Train and validation(yellow) loss over epochs with {} dataset'.format(dataset_name))
+plt.title('Train(green) and validation(yellow) loss over epochs with {} dataset'.format(dataset_name))
 plt.show()
 
 

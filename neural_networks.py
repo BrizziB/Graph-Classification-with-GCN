@@ -53,23 +53,6 @@ class BaseNet(object):
         raise NotImplementedError
 
 
-#se non li usi levali
-    def save(self, sess):
-        if not sess:
-            raise AttributeError("TensorFlow session not provided.")
-        saver = tf.train.Saver(self.weights)
-        print(self.weights)
-        save_path = saver.save(sess, "tmp/%s.ckpt" % self.name)
-        print("Model saved in file: %s" % save_path)
-
-    def load(self, sess):
-        if not sess:
-            raise AttributeError("TensorFlow session not provided.")
-        saver = tf.train.Saver(self.weights)
-        save_path = "tmp/%s.ckpt" % self.name
-        saver.restore(sess, save_path)
-        print("Model restored from file: %s" % save_path)
-
 
 #estende la rete generica
 class GCN(BaseNet):
@@ -185,7 +168,9 @@ class GCNGraphs(BaseNet):
                                             featureless = False))
 
         if self.pooling:
-            self.layers.append(PoolingLayer(    num_graphs = self.num_graphs, num_nodes = self.num_nodes, idx=self.idx,
+            self.layers.append(PoolingLayer(    num_graphs = self.num_graphs,
+                                                num_nodes = self.num_nodes,
+                                                idx=self.idx,
                                                 input_dim=self.output_dim,
                                                 output_dim=self.output_dim,
                                                 placeholders=self.placeholders,
