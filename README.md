@@ -1,5 +1,6 @@
 Based on the article: 
-Semi-Supervised Classification with Graph Convolutional Networks - Thomas N. Kipf, Max Welling. link: https://arxiv.org/abs/1609.02907
+Semi-Supervised Classification with Graph Convolutional Networks - Thomas N. Kipf, Max Welling.
+link: https://arxiv.org/abs/1609.02907
 
 
 This GCN implementation tries to handle graph-classification tasks in two (similar) ways:
