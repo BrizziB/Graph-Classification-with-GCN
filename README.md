@@ -1,6 +1,10 @@
-Based on the article: 
-Semi-Supervised Classification with Graph Convolutional Networks - Thomas N. Kipf, Max Welling.
-link: https://arxiv.org/abs/1609.02907
+Based on 
+  the article: 
+      Semi-Supervised Classification with Graph Convolutional Networks - Thomas N. Kipf, Max Welling.
+      link: https://arxiv.org/abs/1609.02907
+
+  the code: 
+      https://github.com/tkipf/gcn.
 
 
 This GCN implementation tries to handle graph-classification tasks in two (similar) ways:
@@ -11,5 +15,6 @@ This GCN implementation tries to handle graph-classification tasks in two (simil
 Both approaches start with a sparse, block-diagonal version of an adjacency matrix that gathers all the graphs in the dataset.
 See https://github.com/tkipf/gcn/issues/4#issuecomment-274445114  for a better explanation - with figures
 
-Results: on Protein dataset -with the settings in the code- i obtain an average accuracy of 78.8% with 2.7% as standard deviation.
-The result is an average of 100 results, of tests conducted using 1000 graphs in the training set and 100 in the test set.
+Results: on Protein dataset -with the settings in the code- i obtain an average classification accuracy of 78.8% with 2.7% as standard deviation (the two approaches yield very close results).
+This accuracy is an average of 100 result.
+Each test has been conducted using 1000 graphs in the training set and 100 in the test set - with random splits.
