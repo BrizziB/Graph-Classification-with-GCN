@@ -18,7 +18,7 @@ tf.set_random_seed(seed)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('dataset', 'PROTEINS', 'which dataset to load')  # PROTEINS
-flags.DEFINE_boolean('with_pooling', False, 'is a mean value for graph labels is computed via pooling(True) or via global nodes(False)')
+flags.DEFINE_boolean('with_pooling', False, 'whether the mean value for graph labels is computed via pooling(True) or via global nodes(False)')
 flags.DEFINE_boolean('featureless', False, 'If nodes are featureless') #only if with_pooling = False
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
